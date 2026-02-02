@@ -38,7 +38,7 @@ type NewUser struct {
 
 // Handles user creation.
 func (ur userRoute) createUser(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	// ctx := r.Context()
 
 	var user NewUser
 	err := json.NewDecoder(r.Body).Decode(&user)
