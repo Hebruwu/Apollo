@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-        - "**Dockerfile*"
 
 jobs:
   hadolint:
@@ -16,5 +14,5 @@ jobs:
       - name: Lint Dockerfiles
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: "**/Dockerfile*"
+          dockerfile: "*.Dockerfile"
           recursive: true
