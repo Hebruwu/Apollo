@@ -38,6 +38,11 @@ jobs:
       ubuntu-latest
     
     steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
