@@ -9,6 +9,11 @@ jobs:
   backend-checks:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: backend
+
+        
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,10 +22,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
-
-      - name: Go into backend directory
-        run: |
-          cd backend
+          cache: True
+          cache-dependency-path: backend/go.sum
 
       - name: Install dependencies
         run: |
