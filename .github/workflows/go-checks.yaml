@@ -1,4 +1,4 @@
-name: PR Checks
+name: Go checks
 
 on:
   pull_request:
