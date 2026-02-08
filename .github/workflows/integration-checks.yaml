@@ -25,6 +25,13 @@ jobs:
           go-version: "1.25"
           cache: True
           cache-dependency-path: backend/go.sum
+      - name: Cache Go tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/bin
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-tools-${{ hashFiles('backend/go.sum') }}
 
       - uses: docker/setup-compose-action@v1
         with:
