@@ -1,5 +1,5 @@
 db-up:
-	docker compose up -d db
+	docker compose up --detach db
 	$(MAKE) -C backend migrate
 
 db-down:
@@ -7,7 +7,7 @@ db-down:
 
 db-reset:
 	docker compose down -v db
-	docker compose up -d db
+	docker compose up --detach db
 
 format:
 	$(MAKE) -C backend format
