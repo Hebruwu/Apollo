@@ -8,3 +8,8 @@ services:
       POSTGRES_DB: relational
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d relational"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

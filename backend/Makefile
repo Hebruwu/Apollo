@@ -6,5 +6,4 @@ lint:
 	golangci-lint run
 
 migrate:
-	echo ${GOOSE_DBSTRING}
 	goose up
