@@ -1,5 +1,6 @@
 db-up:
 	docker-compose up -d db
+	$(MAKE) -C backend migrate
 
 db-down:
 	docker-compose down -v db

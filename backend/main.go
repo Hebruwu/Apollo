@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -14,6 +15,9 @@ import (
 
 func main() {
 	// Environment config
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger.Info("Starting Server...")
+
 	serverPort := ":" + os.Getenv("SERVER_PORT")
 
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
@@ -30,7 +34,7 @@ func main() {
 		postgresPort,
 		postgresDatabase,
 	)
-
+	logger.Info("Establishing Postgres connection")
 	pgPool, err := pgxpool.New(context.Background(), postgresURL)
 
 	if err != nil {
@@ -42,11 +46,11 @@ func main() {
 	serverConfig := utils.ServerConfig{
 		ServerPort:         serverPort,
 		PostgresConnection: pgPool,
+		Logger:             logger,
 	}
 
 	root := http.NewServeMux()
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api.NewAPIV1(serverConfig)))
 
 	log.Fatal(http.ListenAndServe(serverPort, root))
-
 }
