@@ -41,6 +41,9 @@ jobs:
         working-directory: backend
         run: go build -o $(go env GOPATH)/bin/goose github.com/pressly/goose/v3/cmd/goose
 
-      - name: spinup-db
-        run: |
-          make db-up
+      - name: Start Postgres
+        run: docker compose up -d --wait db
+
+      - name: Run migrations
+        working-directory: backend
+        run: goose up
