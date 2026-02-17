@@ -1,17 +1,24 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
+	"time"
 
-	"apollo.io/api"
-	"apollo.io/utils"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"apollo.io/apolloapiv1"
+	"apollo.io/clients"
+	"apollo.io/serverutils"
 )
+
+var readTimeout = 5 * time.Second
+var writeTimeout = 10 * time.Second
+var idleTimeout = 15 * time.Second
+
+var failureToConnectToDatabase = 1
+var failureToStartServer = 2
 
 func main() {
 	// Environment config
@@ -26,31 +33,48 @@ func main() {
 	postgresHost := os.Getenv("POSTGRES_HOST")
 	postgresPort := os.Getenv("POSTGRES_PORT")
 
+	hostPort := net.JoinHostPort(postgresHost, postgresPort)
+
 	postgresURL := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s/%s",
 		postgresUsername,
 		postgresPassword,
-		postgresHost,
-		postgresPort,
+		hostPort,
 		postgresDatabase,
 	)
 	logger.Info("Establishing Postgres connection")
-	pgPool, err := pgxpool.New(context.Background(), postgresURL)
+	pgClient, err := clients.NewPostgresClient(postgresURL)
 
 	if err != nil {
-		log.Fatal("Failed to connect to the database")
+		logger.Error("Failed to connect to the database: \n" + err.Error())
+		os.Exit(failureToConnectToDatabase)
 	}
 
-	defer pgPool.Close()
+	// Forces defer to execute.
+	err = func() error {
+		defer pgClient.Close()
 
-	serverConfig := utils.ServerConfig{
-		ServerPort:         serverPort,
-		PostgresConnection: pgPool,
-		Logger:             logger,
+		serverConfig := serverutils.ServerConfig{
+			ServerPort:         serverPort,
+			PostgresConnection: pgClient,
+			Logger:             logger,
+		}
+
+		root := http.NewServeMux()
+		root.Handle("/api/v1/", http.StripPrefix("/api/v1", apolloapiv1.NewAPIV1(serverConfig)))
+		srv := &http.Server{
+			Addr:         serverPort,
+			Handler:      root,
+			ReadTimeout:  readTimeout,
+			WriteTimeout: writeTimeout,
+			IdleTimeout:  idleTimeout,
+		}
+
+		return srv.ListenAndServe()
+	}()
+
+	if err != nil {
+		logger.Error("Failed to start server: \n" + err.Error())
+		os.Exit(failureToStartServer)
 	}
-
-	root := http.NewServeMux()
-	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api.NewAPIV1(serverConfig)))
-
-	log.Fatal(http.ListenAndServe(serverPort, root))
 }

@@ -1,12 +1,13 @@
-package utils
+package serverutils
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
+
+	"apollo.io/clients"
 )
 
 type ServerConfig struct {
 	ServerPort         string
-	PostgresConnection *pgxpool.Pool
+	PostgresConnection clients.PostgresClient
 	Logger             *slog.Logger
 }

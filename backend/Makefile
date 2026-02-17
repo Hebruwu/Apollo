@@ -7,3 +7,8 @@ lint:
 
 migrate:
 	goose up
+
+create-migration:
+	goose -s create migration sql
+
+
