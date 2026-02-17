@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"apollo.io/clients"
-	"apollo.io/objects/shared"
+	"apollo.io/objects/servershared"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -21,6 +21,12 @@ type UserService struct {
 	keySize  uint32
 }
 
+var hashTime uint8 = 3
+var memory uint32 = 64 * 1024
+var threads uint8 = 4
+var keySize uint32 = 32
+var saltSize uint32 = 16
+
 func NewUserService(pgClient clients.PostgresClient, logger *slog.Logger) UserService {
 	if pgClient == nil {
 		panic("pgClient is nil")
@@ -32,10 +38,10 @@ func NewUserService(pgClient clients.PostgresClient, logger *slog.Logger) UserSe
 	return UserService{
 		pgClient: pgClient,
 		logger:   logger,
-		hashTime: 3,
-		memory:   64 * 1024,
-		threads:  4,
-		keySize:  32,
+		hashTime: hashTime,
+		memory:   memory,
+		threads:  threads,
+		keySize:  keySize,
 	}
 }
 
@@ -45,19 +51,22 @@ func (us UserService) CreateUser(
 	email string,
 	password string,
 ) error {
-	salt := make([]byte, 16)
+	salt := make([]byte, saltSize)
 	if _, err := rand.Read(salt); err != nil {
 		return fmt.Errorf("generating salt: %w", err)
 	}
 
 	hash := argon2.IDKey([]byte(password), salt, uint32(us.hashTime), us.memory, us.threads, us.keySize)
 
-	newUser := shared.User{
+	newUser := servershared.User{
 		Username:     username,
 		Email:        email,
 		PasswordHash: hash,
 		Salt:         salt,
 	}
-
-	return us.pgClient.AddUser(ctx, newUser)
+	err := us.pgClient.AddUser(ctx, newUser)
+	if err != nil {
+		return fmt.Errorf("adding user: %w", err)
+	}
+	return nil
 }

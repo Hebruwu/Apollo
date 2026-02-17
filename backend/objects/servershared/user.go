@@ -1,4 +1,4 @@
-package shared
+package servershared
 
 import "errors"
 
@@ -11,4 +11,3 @@ type User struct {
 }
 
 var ErrUsernameAlreadyExists = errors.New("username already exists")
-

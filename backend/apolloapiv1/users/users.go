@@ -7,17 +7,17 @@ import (
 
 	"apollo.io/objects/request"
 	"apollo.io/objects/response"
-	"apollo.io/objects/shared"
+	"apollo.io/objects/servershared"
+	"apollo.io/serverutils"
 	"apollo.io/services"
-	"apollo.io/utils"
 )
 
 type userRoute struct {
 	services.UserService
-	utils.ServerConfig
+	serverutils.ServerConfig
 }
 
-func NewUsersBase(serverConfig utils.ServerConfig) http.Handler {
+func NewUsersBase(serverConfig serverutils.ServerConfig) http.Handler {
 	users := http.NewServeMux()
 	ur := userRoute{
 		services.NewUserService(serverConfig.PostgresConnection, serverConfig.Logger),
@@ -34,7 +34,7 @@ func NewUsersBase(serverConfig utils.ServerConfig) http.Handler {
 	return users
 }
 
-func (ur userRoute) authenticate(w http.ResponseWriter, r *http.Request) {
+func (ur userRoute) authenticate(_ http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement getUser
 }
 
@@ -49,37 +49,45 @@ func (ur userRoute) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ur.CreateUser(r.Context(), user.Username, user.Email, user.Password)
-	
+
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		if errors.Is(err, shared.ErrUsernameAlreadyExists) {
+		var encoderError error
+		if errors.Is(err, servershared.ErrUsernameAlreadyExists) {
 			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(response.StatusResponse{Error: response.USERNAME_ALREADY_EXISTS})
+			encoderError = json.NewEncoder(w).Encode(response.StatusResponse{Error: response.UsernameAlreadyExists, Success: ""})
 		} else {
 			ur.Logger.Error(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(response.StatusResponse{Error: response.UNEXPECTED_ERROR})
+			encoderError = json.NewEncoder(w).Encode(response.StatusResponse{Error: response.UnexpectedError, Success: ""})
+		}
+		if encoderError != nil {
+			ur.Logger.Error(encoderError.Error())
+			http.Error(w, response.UnexpectedError, http.StatusInternalServerError)
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response.StatusResponse{Success: response.USER_CREATED})
+	err = json.NewEncoder(w).Encode(response.StatusResponse{Success: response.UserCreated, Error: ""})
+	if err != nil {
+		ur.Logger.Error(err.Error())
+		http.Error(w, response.UnexpectedError, http.StatusInternalServerError)
+	}
 }
 
-func (ur userRoute) updateUser(w http.ResponseWriter, r *http.Request) {
+func (ur userRoute) updateUser(_ http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement updateUser
 }
 
-func (ur userRoute) deleteUser(w http.ResponseWriter, r *http.Request) {
+func (ur userRoute) deleteUser(_ http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement deleteUser
 }
 
-func (ur userRoute) logoutUser(w http.ResponseWriter, r *http.Request) {
+func (ur userRoute) logoutUser(_ http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement logoutUser
 }
 
-func (ur userRoute) refreshToken(w http.ResponseWriter, r *http.Request) {
+func (ur userRoute) refreshToken(_ http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement refreshToken
 }
