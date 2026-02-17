@@ -1,4 +1,4 @@
-FROM golang:1.25 AS build
+FROM golang:1.26-alpine3.23 AS build
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o /server .
 
-FROM gcr.io/distroless/static-debian12
+FROM alpine:3.23
 
 COPY --from=build /server /server
 
