@@ -1,16 +1,14 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
 
 	"apollo.io/api"
+	"apollo.io/clients"
 	"apollo.io/utils"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -35,22 +33,28 @@ func main() {
 		postgresDatabase,
 	)
 	logger.Info("Establishing Postgres connection")
-	pgPool, err := pgxpool.New(context.Background(), postgresURL)
+	pgClient, err := clients.NewPostgresClient(postgresURL)
 
 	if err != nil {
-		log.Fatal("Failed to connect to the database")
+		logger.Error("Failed to connect to the database: \n" + err.Error())
+		os.Exit(1)
 	}
 
-	defer pgPool.Close()
+	defer pgClient.Close()
 
 	serverConfig := utils.ServerConfig{
 		ServerPort:         serverPort,
-		PostgresConnection: pgPool,
+		PostgresConnection: pgClient,
 		Logger:             logger,
 	}
 
 	root := http.NewServeMux()
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api.NewAPIV1(serverConfig)))
 
-	log.Fatal(http.ListenAndServe(serverPort, root))
+	err = http.ListenAndServe(serverPort, root)
+
+	if err != nil {
+		logger.Error("Failed to start server: \n" + err.Error())
+		os.Exit(2)
+	}
 }

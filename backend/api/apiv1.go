@@ -10,7 +10,7 @@ import (
 func NewAPIV1(config utils.ServerConfig) http.Handler {
 	api_v1 := http.NewServeMux()
 
-	api_v1.Handle("/users", http.StripPrefix("/users", users.NewUsersBase(config)))
+	api_v1.Handle("/users/", http.StripPrefix("/users", users.NewUsersBase(config)))
 
 	return api_v1
 }

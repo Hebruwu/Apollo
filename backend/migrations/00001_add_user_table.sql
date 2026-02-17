@@ -3,8 +3,8 @@
 CREATE TABLE users (
     username VARCHAR(255) NOT NULL PRIMARY KEY,
 	email VARCHAR(255) NOT NULL UNIQUE,
-	password_hash VARCHAR(255) NOT NULL,
-	salt VARCHAR(32) NOT NULL,
+	password_hash BYTEA NOT NULL,
+	salt BYTEA NOT NULL,
 	jwt_version INTEGER NOT NULL DEFAULT 0
 );
 -- +goose StatementEnd

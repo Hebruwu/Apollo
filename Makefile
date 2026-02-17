@@ -1,5 +1,5 @@
 db-up:
-	docker compose up --detach db
+	docker compose up --detach --wait db
 	$(MAKE) -C backend migrate
 
 db-down:
@@ -14,3 +14,7 @@ format:
 
 lint:
 	$(MAKE) -C backend lint
+
+integration-test: db-up
+	docker compose up --detach --wait backend
+	cd integration_tests && uv run main.py; result=$$?; docker compose down -v; exit $$result
